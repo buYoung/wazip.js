@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::io::Write;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
@@ -8,7 +7,7 @@ use zip::write::FileOptions;
 #[wasm_bindgen]
 pub struct WaZip {
     zip: zip::ZipWriter<std::io::Cursor<Vec<u8>>>,
-    compression_level: i32,
+    options: FileOptions,
 }
 
 
@@ -31,18 +30,16 @@ impl WaZip {
             },
             None => 6,
         };
+        let options = FileOptions::default()
+            .compression_method(CompressionMethod::Deflated)
+            .compression_level(Option::from(_compression_level))
+            .unix_permissions(0o755);
 
-
-        WaZip { zip: _zip, compression_level: _compression_level }
+        WaZip { zip: _zip, options: options}
     }
 
     pub async fn add_file(&mut self, name: &str, data: &[u8]) -> Result<(), JsValue> {
-        let mut options = FileOptions::default()
-            .compression_method(CompressionMethod::Deflated)
-            .compression_level(Option::from(self.compression_level))
-            .unix_permissions(0o755);
-
-        if let Err(e) = self.zip.start_file(name, options) {
+        if let Err(e) = self.zip.start_file(name, self.options) {
             return Err(JsValue::from_str(format!("[start_file] {}", &e.to_string()).as_str()));
         }
         if let Err(e) = self.zip.write_all(data) {
@@ -53,12 +50,7 @@ impl WaZip {
     }
 
     pub async fn add_directory(&mut self, name: &str) -> Result<(), JsValue> {
-        let mut options = FileOptions::default()
-            .compression_method(CompressionMethod::Deflated)
-            .compression_level(Option::from(self.compression_level))
-            .unix_permissions(0o755);
-
-        if let Err(e) = self.zip.add_directory(name, options) {
+        if let Err(e) = self.zip.add_directory(name, self.options) {
             return Err(JsValue::from_str(format!("[add_directory] {}", &e.to_string()).as_str()));
         }
 
