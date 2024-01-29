@@ -1,6 +1,6 @@
 [package]
-name = "my-project"
-version = "0.1.0"
+name = "wazip"
+version = "0.0.0"
 authors = ["buyong <leebu18@gmail.com>"]
 edition = "2018"
 
@@ -11,7 +11,12 @@ crate-type = ["cdylib", "rlib"]
 default = ["console_error_panic_hook"]
 
 [dependencies]
-wasm-bindgen = "0.2.84"
+wasm-bindgen = "0.2.90"
+wasm-bindgen-futures = "0.4.40"
+js-sys = "0.3.67"
+web-sys = "0.3.67"
+zip = { version = "0.6.6", default-features = false, features = ["deflate-miniz"] }
+
 
 # The `console_error_panic_hook` crate provides better debugging of panics by
 # logging them with `console.error`. This is great for development, but requires
