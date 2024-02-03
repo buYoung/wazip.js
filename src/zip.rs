@@ -1,4 +1,5 @@
 use std::io::Write;
+use js_sys::ArrayBuffer;
 use wasm_bindgen::JsValue;
 use wasm_bindgen::prelude::wasm_bindgen;
 use zip::{CompressionMethod};
@@ -9,7 +10,6 @@ pub struct WaZip {
     zip: zip::ZipWriter<std::io::Cursor<Vec<u8>>>,
     options: FileOptions,
 }
-
 
 #[wasm_bindgen(js_class = WaZip)]
 impl WaZip {
@@ -35,15 +35,33 @@ impl WaZip {
             .compression_level(Option::from(_compression_level))
             .unix_permissions(0o755);
 
-        WaZip { zip: _zip, options: options}
+        WaZip { zip: _zip, options }
     }
 
-    pub async fn add_file(&mut self, name: &str, data: &[u8]) -> Result<(), JsValue> {
+    pub fn add_file(&mut self, name: &str, data: &[u8]) -> Result<(), JsValue> {
         if let Err(e) = self.zip.start_file(name, self.options) {
-            return Err(JsValue::from_str(format!("[start_file] {}", &e.to_string()).as_str()));
+            return Err(JsValue::from_str(format!("[add_file start] {}", &e.to_string()).as_str()));
         }
         if let Err(e) = self.zip.write_all(data) {
-            return Err(JsValue::from_str(format!("[write_all] {}", &e.to_string()).as_str()));
+            return Err(JsValue::from_str(format!("[add_file write] {}", &e.to_string()).as_str()));
+        }
+
+        Ok(())
+    }
+
+    pub fn add_file_string(&mut self, name: &str, data: &str) -> Result<(), JsValue> {
+        if let Err(e) = self.add_file(name, &data.as_bytes()) {
+            return Err(JsValue::from_str(format!("[string] {}", &e.as_string().unwrap()).as_str()));
+        }
+
+        Ok(())
+    }
+
+    pub async fn add_file_array_buffer(&mut self, name: &str, data: &ArrayBuffer) -> Result<(), JsValue> {
+        let array = js_sys::Uint8Array::new(&data);
+        let data = array.to_vec();
+        if let Err(e) = self.add_file(name, &data) {
+            return Err(JsValue::from_str(format!("[add_file_array_buffer] {}", &e.as_string().unwrap()).as_str()));
         }
 
         Ok(())
